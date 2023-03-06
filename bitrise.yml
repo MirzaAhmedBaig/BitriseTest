@@ -1,0 +1,96 @@
+---
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: ios
+workflows:
+  deploy:
+    description: |
+      The workflow tests, builds and deploys the app using *Deploy to bitrise.io* step.
+
+      For testing the *retry_on_failure* test repetition mode is enabled.
+
+      Next steps:
+      - Set up [Connecting to an Apple service with API key](https://devcenter.bitrise.io/en/accounts/connecting-to-services/connecting-to-an-apple-service-with-api-key.html##).
+      - Or further customise code signing following our [iOS code signing](https://devcenter.bitrise.io/en/code-signing/ios-code-signing.html) guide.
+    steps:
+    - activate-ssh-key@4: {}
+    - flutter-installer@0:
+        inputs:
+        - installation_bundle_url: https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.7.3-stable.zip
+    - git-clone@7:
+        inputs:
+        - manual_merge: 'no'
+        - reset_repository: 'Yes'
+    - cache-pull@2.5:
+        inputs:
+        - workdir: "$BITRISE_PROJECT_PATH"
+    - flutter@0:
+        inputs:
+        - working_dir: "$BITRISE_SOURCE_DIR/message_deflection_flutter"
+        - commands: pub get
+        - version: 3.7.3
+    - flutter@0:
+        inputs:
+        - working_dir: "$BITRISE_SOURCE_DIR/message_deflection_flutter"
+        - commands: precache --ios
+        - version: 3.7.3
+    - cocoapods-install@2:
+        inputs:
+        - source_root_path: "$BITRISE_SOURCE_DIR/IOS"
+        - is_cache_disabled: 'false'
+    - cache-push@2:
+        inputs:
+        - workdir: "$BITRISE_SOURCE_DIR/IOS"
+  primary:
+    description: |
+      The workflow executes the tests. The *retry_on_failure* test repetition mode is enabled.
+
+      Next steps:
+      - Check out [Getting started with iOS apps](https://devcenter.bitrise.io/en/getting-started/getting-started-with-ios-apps.html).
+    steps:
+    - activate-ssh-key@4: {}
+    - flutter-installer@0:
+        inputs:
+        - installation_bundle_url: https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.7.3-stable.zip
+    - git-clone@8.0:
+        inputs:
+        - manual_merge: 'no'
+        - reset_repository: 'Yes'
+    - cache-pull@2.5:
+        inputs:
+        - workdir: "$BITRISE_PROJECT_PATH"
+    - flutter@0:
+        inputs:
+        - commands: pub get
+        - working_dir: "$BITRISE_SOURCE_DIR/message_deflection_flutter"
+        - version: 3.7.3
+    - flutter@0:
+        inputs:
+        - working_dir: "$BITRISE_SOURCE_DIR/message_deflection_flutter"
+        - commands: precache --ios
+        - version: 3.7.3
+    - cocoapods-install@2:
+        inputs:
+        - source_root_path: "$BITRISE_SOURCE_DIR/IOS"
+        - is_cache_disabled: 'false'
+    - cache-push@2.5:
+        inputs:
+        - workdir: "$BITRISE_SOURCE_DIR/IOS"
+        - cache_paths: "$BITRISE_SOURCE_DIR/IOS"
+meta:
+  bitrise.io:
+    stack: osx-xcode-14.2.x-ventura
+    machine_type_id: g2.4core
+app:
+  envs:
+  - opts:
+      is_expand: false
+    BITRISE_PROJECT_PATH: https://github.com/providenceinnovation/flutter-message-deflection/tree/kritika/CON-582-CI-for-flutter-and-natives/IOS
+  - opts:
+      is_expand: false
+    BITRISE_SCHEME: IOS
+  - opts:
+      is_expand: false
+    BITRISE_DISTRIBUTION_METHOD: development
+  - FASTLANE_XCODE_LIST_TIMEOUT: '120'
+  - DIG_ON_BITRISE: 'true'
